@@ -38,3 +38,9 @@ AUTH = dotenv_values('.env')
 # DELAY
 MAIL_DELAY = int(15 * 60)
 MAIL_CLEAN_SLEEP = int(10 * 60)
+
+# BEAUTIFY
+LIST_COLOR = ['green', 'yellow', 'blue', 'magenta', 'cyan']
+FIGLET_FONT = 'slant'
+ERROR_COLOR = 'red'
+DEBUG_COLOR = 'white'

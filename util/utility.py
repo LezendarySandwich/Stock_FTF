@@ -1,6 +1,8 @@
 import csv
 import datetime
 import os
+import random
+from re import DEBUG
 import readline
 import threading
 from collections import Counter
@@ -8,8 +10,23 @@ from math import exp
 
 import openpyxl as xl
 from prettytable import PrettyTable
+from pyfiglet import Figlet
+from termcolor import colored
 
-from .constants import RFR, TMP_FILE
+from .constants import (DEBUG_COLOR, ERROR_COLOR, FIGLET_FONT, LIST_COLOR, RFR,
+                        TMP_FILE)
+
+fig_conv = Figlet(font=FIGLET_FONT)
+
+
+def color_random():
+    return random.choice(LIST_COLOR)
+
+
+cmd_col = color_random()
+out_col = color_random()
+while out_col == cmd_col:
+    out_col = color_random()
 
 
 def get_month_number(month: str):
@@ -110,3 +127,20 @@ class HistoryCompleter:
         except IndexError:
             response = None
         return response
+
+
+def log(mssg: str, color: str = cmd_col, figlet=False, state='cmd'):
+    if figlet:
+        mssg = fig_conv.renderText(mssg)
+        text = colored(mssg, color, attrs=['dark', 'bold'])
+        return text
+    elif state == 'cmd':
+        return colored(mssg, color)
+    elif state == 'error':
+        return colored(mssg, ERROR_COLOR)
+    elif state == 'debug':
+        return colored(mssg, DEBUG_COLOR, attrs=['dark'])
+    elif state == 'output':
+        return colored(mssg, out_col, attrs=['bold'])
+    else:
+        return mssg

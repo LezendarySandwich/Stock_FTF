@@ -1,3 +1,4 @@
+altgraph==0.17
 autopep8==1.5.7
 beautifulsoup4==4.9.3
 bs4==0.0.1
@@ -14,10 +15,14 @@ openpyxl==3.0.7
 premailer==3.8.0
 prettytable==2.1.0
 pycodestyle==2.7.0
+pyfiglet==0.8.post1
+pyinstaller==4.3
+pyinstaller-hooks-contrib==2021.1
 PyQRCode==1.2.1
 python-dotenv==0.17.1
 requests==2.22.0
 soupsieve==2.2.1
+termcolor==1.1.0
 toml==0.10.2
 urllib3==1.25.11
 wcwidth==0.2.5

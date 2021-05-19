@@ -3,18 +3,20 @@ import readline
 import signal
 import sys
 import threading
-from threading import Lock, Thread, currentThread
+from pickle import TRUE
+from re import DEBUG
+from threading import Thread
 from time import sleep, time
 
 from notify import push_notification
 from scrape import *
 from util.constants import (CONFIRMED_LOCATION, HISTORY_FILENAME,
-                            MAIL_CLEAN_SLEEP, MAIL_DELAY, SCRIP_LOCATION,
-                            TMP_FILE, THRESHOLD, RFR)
+                            MAIL_CLEAN_SLEEP, MAIL_DELAY, RFR, SCRIP_LOCATION,
+                            THRESHOLD, TMP_FILE)
 from util.threadsafe_datastructure import ImprovedQueue, threadsafe_set
-from util.utility import (HistoryCompleter, conv_matrix, convert_float,
-                          create_csv, excel_list_get, get_fair)
-
+from util.utility import (HistoryCompleter, color_random, conv_matrix,
+                          convert_float, create_csv, excel_list_get, get_fair,
+                          log)
 
 os.makedirs(TMP_FILE, exist_ok=True)
 
@@ -35,7 +37,7 @@ mail_removal_queue = ImprovedQueue(maxsize=0)  # tuple(scrip, time)
 
 
 def clean():
-    print("Cleaning Threads...")
+    print(log("Cleaning Threads...", state="debug"))
     readline.write_history_file(HISTORY_FILENAME)
     current_scrips.clear()
     for thread in current_threads.items():
@@ -75,7 +77,7 @@ def above_threshold(result):
 
 def thread_target_scrip(scrip: str):
 
-    print(f"{scrip}: Thread started")
+    print(log(f"{scrip}: Thread started", state="debug"))
 
     while current_scrips.exist(scrip):
 
@@ -94,7 +96,8 @@ def thread_target_scrip(scrip: str):
                 sleep(20)
                 continue
             else:
-                print(f"\n\nIllegal scrip ({scrip}) given (\"Yahoo\")")
+                print(
+                    log(f"\n\nIllegal scrip ({scrip}) given (\"Yahoo\")", state="error"))
                 remove_scrip(scrip)
                 break
 
@@ -112,7 +115,8 @@ def thread_target_scrip(scrip: str):
                 sleep(20)
                 continue
             else:
-                print(f"\n\nIllegal scrip ({scrip}) given (\"NSE\")")
+                print(
+                    log(f"\n\nIllegal scrip ({scrip}) given (\"NSE\")", state='error'))
                 remove_scrip(scrip)
                 break
 
@@ -120,7 +124,7 @@ def thread_target_scrip(scrip: str):
 
         if current_print_scrips.exist(scrip):
             print(
-                f'\n\nSpot {scrip}: {yahoo_info["spot_price"]}\n', conv_matrix(result) + '\n')
+                log(f'\n\nSpot {scrip}: {yahoo_info["spot_price"]}\n', conv_matrix(result) + '\n', state='output'))
             current_print_scrips.remove(scrip)
 
         if above_threshold(result):
@@ -132,7 +136,7 @@ def thread_target_scrip(scrip: str):
             mail_removal_queue.put(tuple(scrip, time()))
             scrip_mail_set.insert(scrip)
 
-    print(f'{scrip} Thread over')
+    print(log(f'{scrip} Thread over', state='debug'))
 
 
 def add_scrip(scrip):
@@ -149,36 +153,37 @@ def remove_scrip(scrip):
 
 def thread_command():
     while True:
-        cmd = input(
-            'Enter command (?/help): ').lower().strip()
+        cmd = input(log('Enter command (?/help): ')).lower().strip()
         if cmd == "rm":
-            scrip = input("Enter scrip: ")
+            scrip = input(log("Enter scrip: "))
             scrip = scrip.upper()
             if not current_scrips.exist(scrip=scrip):
-                print("Please enter a valid scrip")
+                print(log("Please enter a valid scrip", state='error'))
                 continue
             remove_scrip(scrip)
         elif cmd == "add":
-            scrip = input("Enter scrip: ")
+            scrip = input(log("Enter scrip: "))
             scrip = scrip.upper()
-            confirm = input("Are you sure of the given scrip (Y/N): ")
+            confirm = input(log("Are you sure of the given scrip (Y/N): "))
             if current_scrips.exist(scrip):
-                print("Already scanning the scrip")
+                print(log("Already scanning the scrip", state='debug'))
             else:
                 if confirm.lower == 'y':
                     confirmed_set.insert(scrip)
                 add_scrip(scrip)
         elif cmd == "get":
-            scrip = input("Enter scrip: ")
+            scrip = input(log("Enter scrip: "))
             scrip = scrip.upper()
             if not current_scrips.exist(scrip):
-                print(f'{scrip} is not being scanned')
+                print(log(f'{scrip} is not being scanned', state='debug'))
             else:
                 current_print_scrips.insert(scrip)
         elif cmd == 'read_xl':
-            excel_name = input("Enter excel name (absolute/relative path): ")
+            excel_name = input(
+                log("Enter excel name (absolute/relative path): "))
             if not os.path.exists(excel_name):
-                print(f"Please recheck the sheet: {excel_name}")
+                print(
+                    log(f"Please recheck the sheet: {excel_name}", state='error'))
                 continue
             try:
                 read_list = excel_list_get(excel_name)
@@ -189,28 +194,34 @@ def thread_command():
                 if not current_scrips.exist(scrip):
                     add_scrip(scrip)
                 else:
-                    print(f'{scrip} already running')
+                    print(log(f'{scrip} already running', state='debug'))
         elif cmd == "upd_thresh":
-            new_thresh = float(input(
-                f"Enter new threshold percentage (Just write number) (Current: {THRESHOLD.value} %): "))
-            THRESHOLD.value = new_thresh
+            new_thresh = input(
+                log(f"Enter new threshold percentage (Just write number) (Current: {THRESHOLD.value} %): "))
+            try:
+                THRESHOLD.value = float(new_thresh)
+            except:
+                print(log("Recheck... it should be a number", state='error'))
         elif cmd == "upd_rfr":
-            new_rfr = float(input(
-                f"Enter new RFR percentage (Just write number) (Current: {round(RFR.value * 100, 2)} %): "))
-            RFR.value = new_rfr / 100
+            new_rfr = input(
+                log(f"Enter new RFR percentage (Just write number) (Current: {round(RFR.value * 100, 2)} %): "))
+            try:
+                new_rfr = float(new_rfr)
+                RFR.value = new_rfr / 100
+            except:
+                print(log("Recheck... it should be a number", state='error'))
         elif cmd == "exit":
             clean()
             return
         elif cmd == "list":
-            for scrip in current_scrips.items():
-                print(scrip, end=', ')
-            print()
+            print(log(str(current_scrips.to_list()), state="output"))
         elif cmd == "cls":
             os.system('cls||clear')
         elif cmd == "help" or cmd == "?":
-            print("rm, add, get, list, read_xl, upd_thresh, upd_rfr, cls, exit")
+            print(
+                log("Commands: rm, add, get, list, read_xl, upd_thresh, upd_rfr, cls, exit", state="output"))
         else:
-            print("Enter a valid command")
+            print(log("Enter a valid command", state='error'))
 
 
 def clean_mail_thread_target():
@@ -226,7 +237,7 @@ def clean_mail_thread_target():
                 break
         for _ in range(count_remove):
             scrip = mail_removal_queue.get_nowait()[0]
-            print(f'{scrip}: Back to mailing state')
+            print(log(f'{scrip}: Back to mailing state', state='debug'))
 
 
 def init_threads():
@@ -245,13 +256,14 @@ def main():
     try:
         cmd_thread.join()
     except KeyboardInterrupt:
-        print("Exiting...")
-        print("Please think of using exit command (next time) :( ...")
+        print(log("Exiting...", state='error'))
+        print(
+            log("Please think of using exit command (next time) :( ...", state='error'))
         os._exit(0)
 
 
 if __name__ == '__main__':
-    # signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTSTP, signal_handler)
 
     readline.set_completer(HistoryCompleter().complete)
@@ -262,5 +274,7 @@ if __name__ == '__main__':
     else:
         with open(HISTORY_FILENAME, 'w'):
             pass
+
+    print(log(mssg='STOX CLI', color=color_random(), figlet=TRUE))
 
     main()
