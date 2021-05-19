@@ -38,6 +38,7 @@ def clean():
 
 def signal_handler(signal, frame):
     clean()
+    raise KeyboardInterrupt
     sys.exit(0)
 
 
@@ -68,6 +69,9 @@ def above_threshold(result):
 
 
 def thread_target_scrip(scrip: str):
+
+    print(f"{scrip}: Thread started")
+
     while current_scrips.exist(scrip):
 
         count_wrong = 0
@@ -134,16 +138,17 @@ def remove_scrip(scrip):
 
 def thread_command():
     while True:
-        cmd = input('Enter command (rm, add, get, list, cls, exit): ')
-        cmd = cmd.lower()
+        cmd = input('Enter command (rm, add, get, list, cls, exit): ').lower()
         if cmd == "rm":
             scrip = input("Enter scrip: ")
+            scrip = scrip.upper()
             if not current_scrips.exist(scrip=scrip):
                 print("Please enter a valid scrip")
                 continue
             remove_scrip(scrip)
         elif cmd == "add":
             scrip = input("Enter scrip: ")
+            scrip = scrip.upper()
             confirm = input("Are you sure of the given scrip (Y/N): ")
             if current_scrips.exist(scrip):
                 print("Already scanning the scrip")
@@ -154,6 +159,7 @@ def thread_command():
                 add_scrip(scrip)
         elif cmd == "get":
             scrip = input("Enter scrip: ")
+            scrip = scrip.upper()
             if not current_scrips.exist(scrip):
                 print(f'{scrip} is not being scanned')
             else:
@@ -179,11 +185,16 @@ def init_threads():
 def main():
     init_threads()
     cmd_thread = Thread(name="Command Thread", target=thread_command)
-    cmd_thread.setDaemon(True)
     cmd_thread.start()
     if current_scrips.empty():
         print("No running scrips. Exiting in 30 seconds if none provided")
         sleep(30)
+    try:
+        cmd_thread.join()
+    except KeyboardInterrupt:
+        print("Exiting...")
+        print("Please think of using exit command (next time) :( ...")
+        os._exit(0)
 
 
 if __name__ == '__main__':
