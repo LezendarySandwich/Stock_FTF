@@ -1,7 +1,9 @@
+from threading import local
+
 import requests
 from bs4 import BeautifulSoup
-from threading import local
-from constants import *
+
+from util.constants import URL_NSE, URL_YAHOO, HEADER_NSE
 
 thread_local = local()
 

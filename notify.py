@@ -4,7 +4,7 @@ from threading import current_thread
 import yagmail
 from notify_run import Notify
 
-from constants import AUTH, RECEIVER_MAIL
+from util.constants import AUTH, RECEIVER_MAIL, TMP_FILE
 
 notify = Notify()
 
@@ -15,7 +15,7 @@ def send_notification(mssg):
 
 def send_email(scrip, mssg):
     thread_name = current_thread().name
-    file = os.path.join('.tmp', f'{thread_name}.csv')
+    file = os.path.join(TMP_FILE, f'{thread_name}.csv')
 
     yag = yagmail.SMTP(user=AUTH['email'], password=AUTH['password'])
     subject = f'Reg: {scrip}'

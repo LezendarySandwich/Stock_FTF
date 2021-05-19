@@ -1,16 +1,22 @@
 import os
+import readline
 import signal
 import sys
-import readline
 import threading
 from threading import Lock, Thread, currentThread
-from time import sleep
+from time import sleep, time
 
-from constants import SCRIP_LOCATION, THRESHOLD, HISTORY_FILENAME
 from notify import push_notification
 from scrape import *
-from threadsafe_set import threadsafe_set
-from utility import conv_matrix, convert_float, create_csv, get_fair, HistoryCompleter, excel_list_get
+from util.constants import (CONFIRMED_LOCATION, HISTORY_FILENAME,
+                            MAIL_CLEAN_SLEEP, MAIL_DELAY, SCRIP_LOCATION,
+                            TMP_FILE, THRESHOLD, RFR)
+from util.threadsafe_datastructure import ImprovedQueue, threadsafe_set
+from util.utility import (HistoryCompleter, conv_matrix, convert_float,
+                          create_csv, excel_list_get, get_fair)
+
+
+os.makedirs(TMP_FILE, exist_ok=True)
 
 if not os.path.exists(SCRIP_LOCATION):
     with open(SCRIP_LOCATION, 'w'):
@@ -20,12 +26,12 @@ if not os.path.exists(CONFIRMED_LOCATION):
     with open(CONFIRMED_LOCATION, 'w'):
         pass
 
-os.makedirs('.tmp', exist_ok=True)
-
 current_scrips = threadsafe_set(SCRIP_LOCATION)
 current_print_scrips = threadsafe_set()
 current_threads = threadsafe_set()
 confirmed_set = threadsafe_set(CONFIRMED_LOCATION)
+scrip_mail_set = threadsafe_set()
+mail_removal_queue = ImprovedQueue(maxsize=0)  # tuple(scrip, time)
 
 
 def clean():
@@ -62,7 +68,7 @@ def fair_diff(spot: float, nse_info):
 
 def above_threshold(result):
     for row in range(len(result)):
-        if isinstance(result[row][4], float) and result[row][4] >= THRESHOLD:
+        if isinstance(result[row][4], float) and result[row][4] >= THRESHOLD.value:
             return True
     return False
 
@@ -121,8 +127,11 @@ def thread_target_scrip(scrip: str):
             create_csv(result)
             push_notification(scrip, conv_matrix(result))
             os.remove(os.path.join(
-                '.tmp', f'{threading.current_thread().name}.csv'))
-            sleep(15 * 60)
+                TMP_FILE, f'{threading.current_thread().name}.csv'))
+
+            mail_removal_queue.put(tuple(scrip, time()))
+            scrip_mail_set.insert(scrip)
+
     print(f'{scrip} Thread over')
 
 
@@ -141,7 +150,7 @@ def remove_scrip(scrip):
 def thread_command():
     while True:
         cmd = input(
-            'Enter command (rm, add, get, list, read_xl, cls, exit): ').lower()
+            'Enter command (?/help): ').lower().strip()
         if cmd == "rm":
             scrip = input("Enter scrip: ")
             scrip = scrip.upper()
@@ -181,6 +190,14 @@ def thread_command():
                     add_scrip(scrip)
                 else:
                     print(f'{scrip} already running')
+        elif cmd == "upd_thresh":
+            new_thresh = float(input(
+                f"Enter new threshold percentage (Just write number) (Current: {THRESHOLD.value} %): "))
+            THRESHOLD.value = new_thresh
+        elif cmd == "upd_rfr":
+            new_rfr = float(input(
+                f"Enter new RFR percentage (Just write number) (Current: {round(RFR.value * 100, 2)} %): "))
+            RFR.value = new_rfr / 100
         elif cmd == "exit":
             clean()
             return
@@ -190,12 +207,30 @@ def thread_command():
             print()
         elif cmd == "cls":
             os.system('cls||clear')
+        elif cmd == "help" or cmd == "?":
+            print("rm, add, get, list, read_xl, upd_thresh, upd_rfr, cls, exit")
         else:
             print("Enter a valid command")
 
 
+def clean_mail_thread_target():
+    while True:
+        sleep(MAIL_CLEAN_SLEEP)
+        count_remove = 0
+        current_time = time()
+        for scrip, scrip_time in mail_removal_queue.to_list():
+            time_diff = current_time - scrip_time
+            if time_diff > MAIL_DELAY:
+                count_remove += 1
+            else:
+                break
+        for _ in range(count_remove):
+            scrip = mail_removal_queue.get_nowait()[0]
+            print(f'{scrip}: Back to mailing state')
+
+
 def init_threads():
-    for scrip in current_scrips.items():
+    for scrip in current_scrips.to_list():
         add_scrip(scrip)
 
 
@@ -203,6 +238,10 @@ def main():
     init_threads()
     cmd_thread = Thread(name="Command Thread", target=thread_command)
     cmd_thread.start()
+    cleaner_mail_thread = Thread(
+        name="Mail set cleaner Thread", target=clean_mail_thread_target)
+    cleaner_mail_thread.setDaemon(True)
+    cleaner_mail_thread.start()
     try:
         cmd_thread.join()
     except KeyboardInterrupt:
@@ -212,7 +251,7 @@ def main():
 
 
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, signal_handler)
+    # signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTSTP, signal_handler)
 
     readline.set_completer(HistoryCompleter().complete)

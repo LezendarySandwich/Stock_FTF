@@ -9,7 +9,7 @@ from math import exp
 import openpyxl as xl
 from prettytable import PrettyTable
 
-from constants import RFR
+from .constants import RFR, TMP_FILE
 
 
 def get_month_number(month: str):
@@ -29,7 +29,7 @@ def get_diff_days(day: str):
 
 def get_fair(spot: float, day: str):
     diff = get_diff_days(day)
-    return spot * exp(RFR * diff / 365)
+    return spot * exp(RFR.value * diff / 365)
 
 
 def conv_matrix(mat):
@@ -55,7 +55,7 @@ def convert_float(value: str):
 
 def create_csv(matrix):
     name_thread = threading.current_thread().name
-    path_csv = os.path.join('.tmp', f'{name_thread}.csv')
+    path_csv = os.path.join(TMP_FILE, f'{name_thread}.csv')
     with open(path_csv, "w") as my_csv:
         csvWriter = csv.writer(my_csv, delimiter=',')
         csvWriter.writerows(matrix)

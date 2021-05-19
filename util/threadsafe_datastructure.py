@@ -1,5 +1,7 @@
 import pickle
+from queue import Queue
 from threading import Lock
+import os
 
 
 class threadsafe_set:
@@ -47,6 +49,10 @@ class threadsafe_set:
         finally:
             self.lock.release()
 
+    def to_list(self):
+        with self.lock:
+            return list(self.scrips)
+
     def clear(self):
         with self.lock:
             self.scrips.clear()
@@ -54,3 +60,40 @@ class threadsafe_set:
     def empty(self):
         with self.lock:
             return not bool(self.scrips)
+
+
+class ImprovedQueue(Queue):
+
+    def to_list(self):
+        """
+        Returns a copy of all items in the queue without removing them.
+        """
+
+        with self.mutex:
+            return list(self.queue)
+
+
+class AtomicFloat():
+    def __init__(self, location: str, value=None):
+        if not os.path.exists(location):
+            if not value:
+                raise Exception("Atomic Float: Init value not passed")
+            with open(location, 'w') as fh:
+                fh.write(str(value))
+        with open(location, 'r') as fh:
+            self._value = float(fh.readline())
+        self.location = location
+        self._lock = Lock()
+
+    @property
+    def value(self):
+        with self._lock:
+            return self._value
+
+    @value.setter
+    def value(self, v):
+        with self._lock:
+            self._value = v
+            with open(self.location, 'w') as fh:
+                fh.write(str(v))
+            return self._value
