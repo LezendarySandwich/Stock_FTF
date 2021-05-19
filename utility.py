@@ -8,6 +8,7 @@ from math import exp
 from prettytable import PrettyTable
 
 from constants import RFR
+from collections import Counter
 
 
 def get_month_number(month: str):
@@ -61,10 +62,10 @@ def create_csv(matrix):
 
 def get_history_items():
     num_items = readline.get_current_history_length() + 1
-    return set(
+    return [
         readline.get_history_item(i)
         for i in range(1, num_items)
-    )
+    ]
 
 
 class HistoryCompleter:
@@ -76,12 +77,14 @@ class HistoryCompleter:
         response = None
         if state == 0:
             history_values = get_history_items()
+            history_dict = Counter(history_values)
             if text:
                 self.matches = [
                     h
                     for h in history_values
                     if h and h.startswith(text)
                 ]
+                self.matches.sort(reverse=True, key=lambda x: history_dict[x])
             else:
                 self.matches = []
         try:

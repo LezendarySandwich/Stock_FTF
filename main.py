@@ -39,7 +39,6 @@ def clean():
 def signal_handler(signal, frame):
     clean()
     raise KeyboardInterrupt
-    sys.exit(0)
 
 
 def fair_diff(spot: float, nse_info):
@@ -82,6 +81,7 @@ def thread_target_scrip(scrip: str):
                 break
             except:
                 count_wrong += 1
+                sleep(10)
 
         if count_wrong == 3:
             if confirmed_set.exist(scrip):
@@ -99,6 +99,7 @@ def thread_target_scrip(scrip: str):
                 nse_info = get_futures(scrip.split('.')[0])
             except:
                 count_wrong += 1
+                sleep(10)
 
         if count_wrong == 3:
             if confirmed_set.exist(scrip):
@@ -153,7 +154,7 @@ def thread_command():
             if current_scrips.exist(scrip):
                 print("Already scanning the scrip")
             else:
-                if confirm.lower == 'Y':
+                if confirm.lower == 'y':
                     confirmed_set.insert(scrip)
                 current_scrips.insert(scrip)
                 add_scrip(scrip)
@@ -186,9 +187,6 @@ def main():
     init_threads()
     cmd_thread = Thread(name="Command Thread", target=thread_command)
     cmd_thread.start()
-    if current_scrips.empty():
-        print("No running scrips. Exiting in 30 seconds if none provided")
-        sleep(30)
     try:
         cmd_thread.join()
     except KeyboardInterrupt:
