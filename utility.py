@@ -3,12 +3,13 @@ import datetime
 import os
 import readline
 import threading
+from collections import Counter
 from math import exp
 
+import openpyxl as xl
 from prettytable import PrettyTable
 
 from constants import RFR
-from collections import Counter
 
 
 def get_month_number(month: str):
@@ -66,6 +67,23 @@ def get_history_items():
         readline.get_history_item(i)
         for i in range(1, num_items)
     ]
+
+
+def excel_list_get(file_name: str):
+    wb = xl.load_workbook(filename=file_name)
+    if len(wb.get_sheet_names()) == 1:
+        sheet = wb.get_sheet_by_name(wb.get_sheet_names()[0])
+    else:
+        sheet_name = input("Enter sheet name: ")
+        sheet = wb.get_sheet_by_name(sheet_name)
+    column = input("Enter column name: ")
+    ret_list = list()
+    for row in range(2, sheet.max_row + 1):
+        cell_name = f'{column}{row}'
+        cell_val = sheet[cell_name].value
+        if cell_val:
+            ret_list.append(cell_val)
+    return ret_list
 
 
 class HistoryCompleter:

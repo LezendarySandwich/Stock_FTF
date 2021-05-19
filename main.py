@@ -3,14 +3,14 @@ import signal
 import sys
 import readline
 import threading
-from threading import Lock, Thread
+from threading import Lock, Thread, currentThread
 from time import sleep
 
 from constants import SCRIP_LOCATION, THRESHOLD, HISTORY_FILENAME
 from notify import push_notification
 from scrape import *
 from threadsafe_set import threadsafe_set
-from utility import conv_matrix, convert_float, create_csv, get_fair, HistoryCompleter
+from utility import conv_matrix, convert_float, create_csv, get_fair, HistoryCompleter, excel_list_get
 
 if not os.path.exists(SCRIP_LOCATION):
     with open(SCRIP_LOCATION, 'w'):
@@ -127,6 +127,7 @@ def thread_target_scrip(scrip: str):
 
 
 def add_scrip(scrip):
+    current_scrips.insert(scrip)
     scrip_thread = Thread(name=f'{scrip} Thread',
                           target=thread_target_scrip, args=(scrip, ))
     scrip_thread.start()
@@ -139,7 +140,8 @@ def remove_scrip(scrip):
 
 def thread_command():
     while True:
-        cmd = input('Enter command (rm, add, get, list, cls, exit): ').lower()
+        cmd = input(
+            'Enter command (rm, add, get, list, read_xl, cls, exit): ').lower()
         if cmd == "rm":
             scrip = input("Enter scrip: ")
             scrip = scrip.upper()
@@ -156,7 +158,6 @@ def thread_command():
             else:
                 if confirm.lower == 'y':
                     confirmed_set.insert(scrip)
-                current_scrips.insert(scrip)
                 add_scrip(scrip)
         elif cmd == "get":
             scrip = input("Enter scrip: ")
@@ -165,6 +166,21 @@ def thread_command():
                 print(f'{scrip} is not being scanned')
             else:
                 current_print_scrips.insert(scrip)
+        elif cmd == 'read_xl':
+            excel_name = input("Enter excel name (absolute/relative path): ")
+            if not os.path.exists(excel_name):
+                print(f"Please recheck the sheet: {excel_name}")
+                continue
+            try:
+                read_list = excel_list_get(excel_name)
+            except Exception as e:
+                raise KeyboardInterrupt
+            for scrip in read_list:
+                confirmed_set.insert(scrip)
+                if not current_scrips.exist(scrip):
+                    add_scrip(scrip)
+                else:
+                    print(f'{scrip} already running')
         elif cmd == "exit":
             clean()
             return
