@@ -14,7 +14,7 @@ def get_session(session):
 
 def get_info(scrip: str):
     session = get_session("yahoo")
-    doc = session.get(url_yahoo.format(scrip_req=scrip))
+    doc = session.get(URL_YAHOO.format(scrip_req=scrip))
     soup = BeautifulSoup(doc.text, 'html.parser')
     res_dic = dict()
     soup = soup.body
@@ -37,7 +37,7 @@ def get_info(scrip: str):
 
 def get_futures(scrip: str):
     session = get_session("NSE")
-    doc = session.get(url_nse, headers=header_nse, params={
+    doc = session.get(URL_NSE, headers=HEADER_NSE, params={
         "key": scrip, "Fut_Opt": "Futures"})
     soup = BeautifulSoup(doc.text, 'html.parser')
     soup = soup.find("div", {"id": "tab26Content"}).contents[1]

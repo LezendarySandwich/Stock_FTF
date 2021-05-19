@@ -6,21 +6,26 @@ import threading
 from threading import Lock, Thread
 from time import sleep
 
-from constants import scrip_location, threshold, HISTORY_FILENAME
+from constants import SCRIP_LOCATION, THRESHOLD, HISTORY_FILENAME
 from notify import push_notification
 from scrape import *
 from threadsafe_set import threadsafe_set
 from utility import conv_matrix, convert_float, create_csv, get_fair, HistoryCompleter
 
-if not os.path.exists(scrip_location):
-    with open(scrip_location, 'w'):
+if not os.path.exists(SCRIP_LOCATION):
+    with open(SCRIP_LOCATION, 'w'):
+        pass
+
+if not os.path.exists(CONFIRMED_LOCATION):
+    with open(CONFIRMED_LOCATION, 'w'):
         pass
 
 os.makedirs('.tmp', exist_ok=True)
 
-current_scrips = threadsafe_set(scrip_location)
+current_scrips = threadsafe_set(SCRIP_LOCATION)
 current_print_scrips = threadsafe_set()
 current_threads = threadsafe_set()
+confirmed_set = threadsafe_set(CONFIRMED_LOCATION)
 
 
 def clean():
@@ -57,7 +62,7 @@ def fair_diff(spot: float, nse_info):
 
 def above_threshold(result):
     for row in range(len(result)):
-        if isinstance(result[row][4], float) and result[row][4] >= threshold:
+        if isinstance(result[row][4], float) and result[row][4] >= THRESHOLD:
             return True
     return False
 
@@ -75,9 +80,13 @@ def thread_target_scrip(scrip: str):
                 count_wrong += 1
 
         if count_wrong == 3:
-            print(f"\n\nIllegal scrip ({scrip}) given (\"Yahoo\")")
-            remove_scrip(scrip)
-            break
+            if confirmed_set.exist(scrip):
+                sleep(20)
+                continue
+            else:
+                print(f"\n\nIllegal scrip ({scrip}) given (\"Yahoo\")")
+                remove_scrip(scrip)
+                break
 
         count_wrong = 0
 
@@ -88,9 +97,13 @@ def thread_target_scrip(scrip: str):
                 count_wrong += 1
 
         if count_wrong == 3:
-            print(f"\n\nIllegal scrip ({scrip}) given (\"NSE\")")
-            remove_scrip(scrip)
-            break
+            if confirmed_set.exist(scrip):
+                sleep(20)
+                continue
+            else:
+                print(f"\n\nIllegal scrip ({scrip}) given (\"NSE\")")
+                remove_scrip(scrip)
+                break
 
         result = fair_diff(convert_float(yahoo_info['spot_price']), nse_info)
 
@@ -122,8 +135,6 @@ def remove_scrip(scrip):
 def thread_command():
     while True:
         cmd = input('Enter command (rm, add, get, list, cls, exit): ')
-        readline.insert_text('fdnslkdfnl')
-        readline.redisplay()
         cmd = cmd.lower()
         if cmd == "rm":
             scrip = input("Enter scrip: ")
@@ -133,9 +144,12 @@ def thread_command():
             remove_scrip(scrip)
         elif cmd == "add":
             scrip = input("Enter scrip: ")
+            confirm = input("Are you sure of the given scrip (Y/N): ")
             if current_scrips.exist(scrip):
                 print("Already scanning the scrip")
             else:
+                if confirm.lower == 'Y':
+                    confirmed_set.insert(scrip)
                 current_scrips.insert(scrip)
                 add_scrip(scrip)
         elif cmd == "get":
