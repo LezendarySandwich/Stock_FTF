@@ -8,16 +8,15 @@ from re import DEBUG
 from threading import Thread
 from time import sleep, time
 
-from notify import push_notification
-from scrape import *
 from util.constants import (CONFIRMED_LOCATION, HISTORY_FILENAME,
                             MAIL_CLEAN_SLEEP, MAIL_DELAY, RFR, SCRIP_LOCATION,
                             THRESHOLD, TMP_FILE)
+from util.notify import push_notification
+from util.scrape import *
 from util.threadsafe_datastructure import ImprovedQueue, threadsafe_set
 from util.utility import (HistoryCompleter, color_random, conv_matrix,
                           convert_float, create_csv, excel_list_get, get_fair,
                           log)
-
 
 if not os.path.exists(SCRIP_LOCATION):
     with open(SCRIP_LOCATION, 'w'):
@@ -225,7 +224,7 @@ def thread_command():
             data = current_scrips.to_list()
             text = ', '.join(map(str, data))
             print(log(text, state="output"))
-        elif cmd == "cls":
+        elif cmd == "cls" or cmd == "clear":
             os.system('cls||clear')
         elif cmd == "help" or cmd == "?":
             print(

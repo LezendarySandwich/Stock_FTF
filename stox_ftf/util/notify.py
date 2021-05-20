@@ -4,7 +4,7 @@ from threading import current_thread
 import yagmail
 from notify_run import Notify
 
-from util.constants import AUTH, RECEIVER_MAIL, TMP_FILE
+from .constants import AUTH, RECEIVER_MAIL, TMP_FILE
 
 notify = Notify()
 
