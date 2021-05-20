@@ -5,8 +5,9 @@ from dotenv import dotenv_values
 from util.threadsafe_datastructure import AtomicFloat
 
 from .threadsafe_datastructure import AtomicFloat
+from pathlib import Path
 
-cwd = os.getcwd()
+cwd = Path(__file__).parent.absolute()
 
 # URI
 URL_YAHOO = "https://finance.yahoo.com/quote/{scrip_req}/"
@@ -15,7 +16,7 @@ HEADER_NSE = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Safari/537.36'}
 
 # FILE LOCATIONS
-TMP_FILE = os.path.join(cwd, 'util', '.tmp')
+TMP_FILE = os.path.join(cwd, '.tmp')
 os.makedirs(TMP_FILE, exist_ok=True)
 HISTORY_FILENAME = os.path.join(TMP_FILE, 'completer.hist')
 SCRIP_LOCATION = os.path.join(TMP_FILE, 'scrips.p')
