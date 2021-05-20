@@ -1,0 +1,12 @@
+version: '3'
+
+services: 
+  stox_ftf:
+    container_name: stox_ftf_container
+    build: .
+    volumes: 
+      - .:/app
+    env_file: 
+      - stox_ftf/.env
+    stdin_open: true
+    tty: true
