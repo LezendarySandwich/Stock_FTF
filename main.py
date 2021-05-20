@@ -50,7 +50,8 @@ def signal_handler(signal, frame):
 
 
 def fair_diff(spot: float, nse_info):
-    result = [['Exp date', 'Market', 'Fair', 'Gain', 'Percentage Gain']]
+    result = [['Exp date', 'Market', 'Fair',
+               'Gain (Market - Fair)', 'Percentage Gain']]
     for row in range(1, 4):
         exp_date = nse_info[row][2]
         fair = get_fair(spot, exp_date)
@@ -70,8 +71,12 @@ def fair_diff(spot: float, nse_info):
 
 def above_threshold(result):
     for row in range(len(result)):
-        if isinstance(result[row][4], float) and result[row][4] >= THRESHOLD.value:
-            return True
+        try:
+            gain = abs(float(result[row][4][:-2]))
+            if gain >= THRESHOLD.value:
+                return True
+        except:
+            pass
     return False
 
 
@@ -120,21 +125,25 @@ def thread_target_scrip(scrip: str):
                 remove_scrip(scrip)
                 break
 
-        result = fair_diff(convert_float(yahoo_info['spot_price']), nse_info)
+        spot_price = yahoo_info['spot_price']
+        result = fair_diff(convert_float(spot_price), nse_info)
 
         if current_print_scrips.exist(scrip):
             print(
-                log(f'\n\nSpot {scrip}: {yahoo_info["spot_price"]}\n', conv_matrix(result) + '\n', state='output'))
+                log(f'\n\nSpot {scrip}: {spot_price}\n{conv_matrix(result)}\n', state='output'))
             current_print_scrips.remove(scrip)
 
-        if above_threshold(result):
-            create_csv(result)
-            push_notification(scrip, conv_matrix(result))
+        if above_threshold(result) and not scrip_mail_set.exist(scrip):
+            csv_result = result + [[f'{scrip} spot price', spot_price]]
+            create_csv(csv_result)
+            push_notification(
+                scrip, f'{scrip} spot price: {spot_price}\n\n{conv_matrix(result)}')
             os.remove(os.path.join(
                 TMP_FILE, f'{threading.current_thread().name}.csv'))
 
-            mail_removal_queue.put(tuple(scrip, time()))
+            mail_removal_queue.put((scrip, time()))
             scrip_mail_set.insert(scrip)
+            print(log(f'\n{scrip}: MAILED\n', state='priority'))
 
     print(log(f'{scrip} Thread over', state='debug'))
 
@@ -214,7 +223,9 @@ def thread_command():
             clean()
             return
         elif cmd == "list":
-            print(log(str(current_scrips.to_list()), state="output"))
+            data = current_scrips.to_list()
+            text = ', '.join(map(str, data))
+            print(log(text, state="output"))
         elif cmd == "cls":
             os.system('cls||clear')
         elif cmd == "help" or cmd == "?":
@@ -237,6 +248,7 @@ def clean_mail_thread_target():
                 break
         for _ in range(count_remove):
             scrip = mail_removal_queue.get_nowait()[0]
+            scrip_mail_set.remove(scrip)
             print(log(f'{scrip}: Back to mailing state', state='debug'))
 
 
@@ -275,6 +287,6 @@ if __name__ == '__main__':
         with open(HISTORY_FILENAME, 'w'):
             pass
 
-    print(log(mssg='STOX CLI', color=color_random(), figlet=TRUE))
+    print(log(mssg='STOX    FTF', color=color_random(), figlet=TRUE))
 
     main()

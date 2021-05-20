@@ -13,7 +13,7 @@ from prettytable import PrettyTable
 from pyfiglet import Figlet
 from termcolor import colored
 
-from .constants import (DEBUG_COLOR, ERROR_COLOR, FIGLET_FONT, LIST_COLOR, RFR,
+from .constants import (DEBUG_COLOR, ERROR_COLOR, FIGLET_FONT, LIST_COLOR, PRIORITY_COLOR, RFR,
                         TMP_FILE)
 
 fig_conv = Figlet(font=FIGLET_FONT)
@@ -99,7 +99,7 @@ def excel_list_get(file_name: str):
         cell_name = f'{column}{row}'
         cell_val = sheet[cell_name].value
         if cell_val:
-            ret_list.append(cell_val)
+            ret_list.append(cell_val.upper())
     return ret_list
 
 
@@ -142,5 +142,7 @@ def log(mssg: str, color: str = cmd_col, figlet=False, state='cmd'):
         return colored(mssg, DEBUG_COLOR, attrs=['dark'])
     elif state == 'output':
         return colored(mssg, out_col, attrs=['bold'])
+    elif state == 'priority':
+        return colored(mssg, PRIORITY_COLOR, attrs=['blink'])
     else:
         return mssg
