@@ -18,7 +18,6 @@ from util.utility import (HistoryCompleter, color_random, conv_matrix,
                           convert_float, create_csv, excel_list_get, get_fair,
                           log)
 
-os.makedirs(TMP_FILE, exist_ok=True)
 
 if not os.path.exists(SCRIP_LOCATION):
     with open(SCRIP_LOCATION, 'w'):

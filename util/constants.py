@@ -16,6 +16,7 @@ HEADER_NSE = {
 
 # FILE LOCATIONS
 TMP_FILE = os.path.join(cwd, 'util', '.tmp')
+os.makedirs(TMP_FILE, exist_ok=True)
 HISTORY_FILENAME = os.path.join(TMP_FILE, 'completer.hist')
 SCRIP_LOCATION = os.path.join(TMP_FILE, 'scrips.p')
 CONFIRMED_LOCATION = os.path.join(TMP_FILE, 'confirmed.p')
