@@ -2,7 +2,7 @@ import os
 
 from dotenv import dotenv_values
 
-from util.threadsafe_datastructure import AtomicFloat
+from .threadsafe_datastructure import AtomicFloat
 
 from .threadsafe_datastructure import AtomicFloat
 from pathlib import Path
@@ -34,7 +34,7 @@ RFR = AtomicFloat(RFR_LOCATION, RFR_INIT)
 
 # MAIL
 RECEIVER_MAIL = 'arvind_gupta@hotmail.com'
-AUTH = dotenv_values('.env')
+AUTH = dotenv_values(os.path.join(cwd, '..', '..', '.env'))
 
 
 # DELAY

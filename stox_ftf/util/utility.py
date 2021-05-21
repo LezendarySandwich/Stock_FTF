@@ -78,14 +78,6 @@ def create_csv(matrix):
         csvWriter.writerows(matrix)
 
 
-def get_history_items():
-    num_items = readline.get_current_history_length() + 1
-    return [
-        readline.get_history_item(i)
-        for i in range(1, num_items)
-    ]
-
-
 def excel_list_get(file_name: str):
     wb = xl.load_workbook(filename=file_name)
     if len(wb.get_sheet_names()) == 1:
@@ -103,6 +95,14 @@ def excel_list_get(file_name: str):
     return ret_list
 
 
+def get_history_items():
+    num_items = readline.get_current_history_length() + 1
+    return [
+        readline.get_history_item(i).lower()
+        for i in range(1, num_items)
+    ]
+
+
 class HistoryCompleter:
 
     def __init__(self):
@@ -112,6 +112,10 @@ class HistoryCompleter:
         response = None
         if state == 0:
             history_values = get_history_items()
+            if text.islower():
+                history_values = [i.lower() for i in history_values]
+            else:
+                history_values = [i.upper() for i in history_values]
             history_dict = Counter(history_values)
             if text:
                 self.matches = [

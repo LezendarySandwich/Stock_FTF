@@ -123,8 +123,15 @@ def thread_target_scrip(scrip: str):
                 remove_scrip(scrip)
                 break
 
-        spot_price = yahoo_info['spot_price']
-        result = fair_diff(convert_float(spot_price), nse_info)
+        try:
+            spot_price = yahoo_info['spot_price']
+            result = fair_diff(convert_float(spot_price), nse_info)
+        except:
+            print(
+                log(f"\n\nIllegal scrip ({scrip}) given", state='error'))
+            remove_scrip(scrip)
+            confirmed_set.remove(scrip)
+            return
 
         if current_print_scrips.exist(scrip):
             print(
@@ -163,24 +170,33 @@ def thread_command():
         cmd = input(log('Enter command (?/help): ')).lower().strip()
         if cmd == "rm":
             scrip = input(log("Enter scrip: "))
-            scrip = scrip.upper()
+            scrip = scrip.upper().strip()
+            if not scrip.endswith('.NS'):
+                print(log('Please enter a scrip which ends with .NS', state='error'))
+                continue
             if not current_scrips.exist(scrip=scrip):
                 print(log("Please enter a valid scrip", state='error'))
                 continue
             remove_scrip(scrip)
         elif cmd == "add":
             scrip = input(log("Enter scrip: "))
-            scrip = scrip.upper()
+            scrip = scrip.upper().strip()
+            if not scrip.endswith('.NS'):
+                print(log('Please enter a scrip which ends with .NS', state='error'))
+                continue
             confirm = input(log("Are you sure of the given scrip (Y/N): "))
             if current_scrips.exist(scrip):
                 print(log("Already scanning the scrip", state='debug'))
             else:
-                if confirm.lower == 'y':
+                if confirm.lower() == 'y':
                     confirmed_set.insert(scrip)
                 add_scrip(scrip)
         elif cmd == "get":
             scrip = input(log("Enter scrip: "))
-            scrip = scrip.upper()
+            scrip = scrip.upper().strip()
+            if not scrip.endswith('.NS'):
+                print(log('Please enter a scrip which ends with .NS', state='error'))
+                continue
             if not current_scrips.exist(scrip):
                 print(log(f'{scrip} is not being scanned', state='debug'))
             else:
