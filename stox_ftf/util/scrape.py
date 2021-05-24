@@ -3,7 +3,7 @@ from threading import local
 import requests
 from bs4 import BeautifulSoup
 
-from .constants import URL_NSE, URL_YAHOO, HEADER_NSE
+from .constants import URL_NSE, URL_YAHOO, HEADER_NSE, HEADER_YAHOO
 
 thread_local = local()
 
@@ -15,7 +15,7 @@ def get_session(session):
 
 
 def get_info(scrip: str):
-    session = get_session("yahoo")
+    session = get_session("yahoo", headers=HEADER_YAHOO)
     doc = session.get(URL_YAHOO.format(scrip_req=scrip))
     soup = BeautifulSoup(doc.text, 'html.parser')
     res_dic = dict()
