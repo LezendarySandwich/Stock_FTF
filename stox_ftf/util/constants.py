@@ -14,6 +14,13 @@ URL_YAHOO = "https://finance.yahoo.com/quote/{scrip_req}/"
 URL_NSE = "https://www1.nseindia.com/live_market/dynaContent/live_watch/fomwatchsymbol.jsp"
 HEADER_NSE = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Safari/537.36'}
+HEADER_YAHOO = { 
+'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36', 
+'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 
+'Accept-Language' : 'en-US,en;q=0.5', 
+'Accept-Encoding' : 'gzip', 
+'DNT' : '1', # Do Not Track Request Header 
+'Connection' : 'close' }
 
 # FILE LOCATIONS
 TMP_FILE = os.path.join(cwd, '.tmp')
