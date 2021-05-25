@@ -2,8 +2,13 @@ from threading import local
 
 import requests
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.options import Options
 
-from .constants import URL_NSE, URL_YAHOO, HEADER_NSE, HEADER_YAHOO
+from .constants import (FIREFOX_DRIVER, FIREFOX_LOG, HEADER_NSE, HEADER_YAHOO,
+                        URL_NSE, URL_YAHOO)
+from .utility import log
 
 thread_local = local()
 
@@ -14,10 +19,29 @@ def get_session(session):
     return getattr(thread_local, session)
 
 
+def get_browser(scrip):
+    if not hasattr(thread_local, scrip):
+        opts = Options()
+        opts.add_argument('-headless')
+        browser = webdriver.Firefox(
+            executable_path=FIREFOX_DRIVER, options=opts, log_path=FIREFOX_LOG)
+        browser.get(URL_YAHOO.format(scrip_req=scrip))
+        print(log(f'{scrip}: Browser initiated\n', state='debug'))
+        setattr(thread_local, scrip, browser)
+    return getattr(thread_local, scrip)
+
+
+def quit_browser(scrip):
+    if hasattr(thread_local, scrip):
+        browser = get_browser(scrip)
+        browser.quit()
+        print(log(f'{scrip}: Browser Terminated', state='error'))
+
+
 def get_info(scrip: str):
-    session = get_session("yahoo", headers=HEADER_YAHOO)
-    doc = session.get(URL_YAHOO.format(scrip_req=scrip))
-    soup = BeautifulSoup(doc.text, 'html.parser')
+    browser = get_browser(scrip)
+    html = browser.page_source
+    soup = BeautifulSoup(html, 'html.parser')
     res_dic = dict()
     soup = soup.body
     spot_tag = soup.find("span", {"data-reactid": "32"})

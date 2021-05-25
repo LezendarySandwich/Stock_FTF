@@ -150,6 +150,7 @@ def thread_target_scrip(scrip: str):
             scrip_mail_set.insert(scrip)
             print(log(f'\n{scrip}: MAILED\n', state='priority'))
 
+    quit_browser(scrip)
     print(log(f'{scrip} Thread over', state='debug'))
 
 
