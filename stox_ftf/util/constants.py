@@ -43,9 +43,8 @@ THRESHOLD = AtomicFloat(THRESH_LOCATION, THRESHOLD_INIT)
 RFR = AtomicFloat(RFR_LOCATION, RFR_INIT)
 
 # MAIL
-RECEIVER_MAIL = 'arvind_gupta@hotmail.com'
 AUTH = dotenv_values(os.path.join(cwd, '..', '..', '.env'))
-
+RECEIVER_MAIL = AUTH['receive_email']
 
 # DELAY
 MAIL_DELAY = int(15 * 60)
